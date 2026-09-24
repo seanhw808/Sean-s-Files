@@ -1,0 +1,149 @@
+songs <- read.csv("C:/Users/rache/OneDrive/Documents/dataset.csv")
+View(songs)
+songs <- na.omit(songs)
+
+#set seed
+set.seed(100)
+song_sample <- songs[sample(nrow(songs),100),]
+
+#example plot
+plot(song_sample$danceability, song_sample$popularity)
+
+##code for multicollinearity scatterplot matrix
+pairs(song_sample[, c("popularity", "danceability", "energy", "loudness","tempo", "valence")])
+
+##code for lm with all independent variables
+model <- lm(popularity ~ danceability + energy + loudness + tempo + valence, data = song_sample)
+summary(model)
+
+###LIVENESS
+set.seed(100)
+
+dance_sample <- songs[sample(nrow(songs), 100),]
+
+dance_reg <- lm(dance_sample$song_popularity ~ dance_sample$liveness)
+
+plot(dance_sample$liveness, dance_sample$song_popularity,
+     xlab = "Liveness", ylab = "Popularity", main = "Popularity vs Liveness")
+abline(dance_reg, col = "blue", lwd = 2)
+
+dance_cor <- cor(dance_sample$liveness, dance_sample$song_popularity)
+cat("Correlation between liveness and popularity:", round(dance_cor, 3), "\n")
+
+summary(dance_reg)
+
+plot(dance_sample$liveness, resid(dance_reg),
+     xlab = "Liveness",
+     ylab = "Residuals",
+     main = "Residual Plot")
+abline(h = 0, col = "red", lty = 2)
+
+qqnorm(resid(dance_reg), main = "QQ Plot of Residuals")
+qqline(resid(dance_reg), col = "blue", lwd = 2)
+
+library(lmtest)
+bptest(dance_reg)
+
+#VALENCE
+set.seed(100)
+
+val_sample <- songs[sample(nrow(songs), 100),]
+
+val_reg <- lm(val_sample$popularity ~ val_sample$valence)
+
+plot(val_sample$valence, val_sample$popularity,
+     xlab = "Valence", ylab = "Popularity", main = "Popularity vs Valence")
+abline(val_reg, col = "blue", lwd = 2)
+
+val_cor <- cor(val_sample$valence, val_sample$popularity)
+cat("Correlation between valence and popularity:", round(val_cor, 3), "\n")
+
+summary(val_reg)
+
+plot(val_sample$valence, resid(val_reg),
+     xlab = "Valence",
+     ylab = "Residuals",
+     main = "Residual Plot")
+abline(h = 0, col = "red", lty = 2)
+
+qqnorm(resid(val_reg), main = "QQ Plot of Residuals")
+qqline(resid(val_reg), col = "blue", lwd = 2)
+
+library(lmtest)
+bptest(val_reg)
+
+#DANCEABILITY
+set.seed(100)
+
+dance_sample <- songs[sample(nrow(songs), 100),]
+
+dance_reg <- lm(dance_sample$popularity ~ dance_sample$danceability)
+
+plot(dance_sample$danceability, dance_sample$popularity,
+     xlab = "Danceability", ylab = "Popularity", main = "Popularity vs Danceability")
+abline(dance_reg, col = "blue", lwd = 2)
+
+dance_cor <- cor(dance_sample$danceability, dance_sample$popularity)
+cat("Correlation between danceability and popularity:", round(dance_cor, 3), "\n")
+
+summary(dance_reg)
+
+plot(dance_sample$danceability, resid(dance_reg),
+     xlab = "Danceability",
+     ylab = "Residuals",
+     main = "Residual Plot")
+abline(h = 0, col = "red", lty = 2)
+
+qqnorm(resid(dance_reg), main = "QQ Plot of Residuals")
+qqline(resid(dance_reg), col = "blue", lwd = 2)
+
+library(lmtest)
+bptest(dance_reg)
+
+#LOUDNESS
+songs<-read.csv("spotify_tracks_metadata.csv")
+songs<-na.omit(songs)
+set.seed(100)
+song_sample<-songs[sample(nrow(songs),100),]
+loudness<-song_sample$loudness
+pop<-song_sample$song_popularity
+test_model<-lm(pop~loudness)
+library(lmtest)
+library(MASS)
+
+plot(loudness,pop,abline(test_model,col="blue",lwd=2),ylab="Popularity",xlab="Loudness",main="Popularity vs. Loudness")
+#not a strong indicator, as much spread around regression line
+
+summary(test_model)
+bptest(test_model)
+#not a strong model by ANY means: R^2=0.0363, R^2 adjusted=0.02646
+#intercept is significant to 0.001%
+#p-value of Breusch Pagan test is very high, thus fail to reject null --> homoscedastic
+
+plot(loudness,resid(test_model),ylab="Residuals",xlab="Loudness",main="Residual Plot")
+abline(h=0, col= "red", lty=2)
+#residuals seem to be somewhat heteroscedastic despite BP test, but linear
+
+qqnorm(resid(test_model),main="QQ Plot of Residuals")
+qqline(resid(test_model),col="blue",lwd=2)
+#decently-sized departure from normality at low numbers
+
+anova(test_model)
+#p-value for f-test only slightly above 0.05, so not a good model but not horrible
+
+#Overall, okay model; there doesn't seem to be a strong
+#correlation between loudness and popularity
+
+#Box-cox transformation
+bctest_data<-test_model$model[test_model$model[1]!=0,]
+bctest_model<-lm(formula(test_model),data=bctest_data) #remove non-positive fitted values
+boxcox(bctest_model,lambda=seq(-2,2,0.5)) #lambda is about 0.5
+#since lambda is ~0.5, the transformation will be sqrt(y)
+transf_model<-lm(sqrt(pop)~loudness)
+plot(loudness,sqrt(pop),abline(transf_model,col="blue",lwd=2),ylab="sqrt(Popularity)",xlab="Loudness",main="sqrt(Popularity) vs. Loudness")
+#doesn't appear to be a better model, let's look at summary
+summary(transf_model)
+#not much different from original model, in fact original model might perform slightly better
+qqnorm(resid(transf_model),main="QQ Plot of Transformed Model Residuals")
+qqline(resid(transf_model),col="blue",lwd=2)
+#huge departure from normality, appears original model was "normal enough" and not really skewed, so box-cox didn't work
